@@ -1,0 +1,20 @@
+version: 18
+jobs:
+- name: Sync
+  steps:
+  - !PushRepository
+    name: Sync
+    remoteUrl: https://github.com/20020314/acg-faka
+    userName: '20020314'
+    passwordSecret: GitHub-ToKen
+    withLfs: false
+    force: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  triggers:
+  - !TagCreateTrigger {}
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  cpuRequirement: 250
+  memoryRequirement: 256
+  timeout: 3600
