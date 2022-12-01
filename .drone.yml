@@ -32,7 +32,7 @@ steps:
   - (mv Qmfh1VCX pack-v0.17.0-linux.tgz| sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack)
   #- (curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.17.0/pack-v0.17.0-linux.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack)
   - cd /faka/acg-faka
-  - pack build images.elysia.li/acg-faka --builder gcr.io/buildpacks/builder:v1
+  - pack build images.elysia.li/acg-faka --builder images.elysia.li/builder:v1
 # Update
 - name: 上传镜像
   image: images.elysia.li/dockeri:latest
