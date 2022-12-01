@@ -5,12 +5,6 @@ steps:
 clone:
   disable: true
 steps:
-- name: 连接开发平台
-  image: node:16.17.1-alpine3.15
-  commands:
-  - npm i laf-cli -g
-  - laf login -u lin -p 389609066 -r https://console.elysia.li
-  - laf list
 # install
 - name: 拉取代码
   image: alpine
