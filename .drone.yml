@@ -7,39 +7,40 @@ clone:
 steps:
 # install
 - name: 拉取代码
-  image: alpine
+  image: images.elysia.li/alpine:latest
   volumes:
   - name: cache
     path: /faka
   commands:
   - apk update
-  - apk add git bash
+  - apk add unzip wget
   - cd /faka
-  - git clone https://github.com/lizhipay/acg-faka
+  - wget https://file.elysia.li/share/x-fWSlPN
+  - mv x-fWSlPN acg-faka.zip
+  - unzip acg-faka.zip
 # Docker in Docker
 - name: 自动构建
-  image: chaikair/dockeri:latest
+  image: images.elysia.li/dockeri:latest
   volumes:
   - name: cache
     path: /faka
   - name: docker-sock
     path: /var/run/docker.sock
   commands:
-  - apk add sudo curl
-  - (curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.17.0/pack-v0.17.0-linux.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack)
+  - apk add sudo curl wget
+  - wget https://file.elysia.li/share/Qmfh1VCX
+  - (mv Qmfh1VCX pack-v0.17.0-linux.tgz| sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack)
+  #- (curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.17.0/pack-v0.17.0-linux.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack)
   - cd /faka/acg-faka
-  - pack build chaikair/acg-faka --builder gcr.io/buildpacks/builder:v1
-#  - docker login --username=chaikair --password=389609066
+  - pack build images.elysia.li/acg-faka --builder gcr.io/buildpacks/builder:v1
 # Update
 - name: 上传镜像
-  image: chaikair/dockeri:latest
+  image: images.elysia.li/dockeri:latest
   volumes:
   - name: docker-sock
     path: /var/run/docker.sock
   commands:
-  - docker login --username=chaikair --password=389609066
-  - docker push chaikair/acg-faka
-  - docker save -o acg-faka.tar.gz chaikair/acg-faka
+  - docker push images.elysia.li/acg-faka
 # AUTO RM
 - name: 清理镜像
   image: chaikair/dockeri:latest
