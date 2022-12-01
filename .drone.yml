@@ -1,0 +1,63 @@
+kind: pipeline
+type: docker
+name: ACG-FAKA🤡
+steps:
+clone:
+  disable: true
+steps:
+- name: 连接开发平台
+  image: node:16.17.1-alpine3.15
+  commands:
+  - npm i laf-cli -g
+  - laf login -u lin -p 389609066 -r https://console.elysia.li
+  - laf list
+# install
+- name: 拉取代码
+  image: alpine
+  volumes:
+  - name: cache
+    path: /faka
+  commands:
+  - apk update
+  - apk add git bash
+  - cd /faka
+  - git clone https://github.com/lizhipay/acg-faka
+# Docker in Docker
+- name: 自动构建
+  image: chaikair/dockeri:latest
+  volumes:
+  - name: cache
+    path: /faka
+  - name: docker-sock
+    path: /var/run/docker.sock
+  commands:
+  - apk add sudo curl
+  - (curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.17.0/pack-v0.17.0-linux.tgz" | sudo tar -C /usr/local/bin/ --no-same-owner -xzv pack)
+  - cd /faka/acg-faka
+  - pack build chaikair/acg-faka --builder gcr.io/buildpacks/builder:v1
+#  - docker login --username=chaikair --password=389609066
+# Update
+- name: 上传镜像
+  image: chaikair/dockeri:latest
+  volumes:
+  - name: docker-sock
+    path: /var/run/docker.sock
+  commands:
+  - docker login --username=chaikair --password=389609066
+  - docker push chaikair/acg-faka
+  - docker save -o acg-faka.tar.gz chaikair/acg-faka
+# AUTO RM
+- name: 清理镜像
+  image: chaikair/dockeri:latest
+  volumes:
+  - name: docker-sock
+    path: /var/run/docker.sock
+  commands:
+  - docker image prune -f
+  - docker volume prune -f
+volumes:
+- name: cache
+  temp: {}
+- name: docker-sock
+  host:
+   path: /var/run/docker.sock
