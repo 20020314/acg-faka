@@ -7,7 +7,7 @@ clone:
 steps:
 # install
 - name: 拉取代码
-  image: images.elysia.li/alpine:latest
+  image: images.elysia.li/dockeri:latest
   volumes:
   - name: cache
     path: /faka
