@@ -512,6 +512,8 @@ class OrderService implements Order
             $secret = null;
             $order->amount = (float)sprintf("%.2f", (int)(string)($order->amount * 100) / 100);
 
+            hook(\App\Consts\Hook::USER_API_ORDER_TRADE_PAY_BEGIN, $commodity, $order, $pay);
+
             if ($order->amount == 0) {
                 //免费赠送
                 $order->save();//先将订单保存下来
@@ -550,7 +552,8 @@ class OrderService implements Order
                         require($autoload);
                     }
                     //增加接口手续费：0.9.6-beta
-                    $order->amount = $order->amount + ($pay->cost_type == 0 ? $pay->cost : $order->amount * $pay->cost);
+                    $order->pay_cost = $pay->cost_type == 0 ? $pay->cost : $order->amount * $pay->cost;
+                    $order->amount = $order->amount + $order->pay_cost;
                     $order->amount = (float)sprintf("%.2f", (int)(string)($order->amount * 100) / 100);
 
                     $payObject = new $class;
@@ -685,7 +688,10 @@ class OrderService implements Order
             $businessLevel = $merchant->businessLevel;
             if ($businessLevel) {
                 $order->cost = $order->amount * $businessLevel->cost; //手续费
-                Bill::create($merchant, $order->amount - $order->cost, Bill::TYPE_ADD, "商品出售[$order->trade_no]", 1);
+                $a1 = $order->amount - $order->cost - $order->pay_cost;
+                if ($a1 > 0) {
+                    Bill::create($merchant, $a1, Bill::TYPE_ADD, "商品出售[$order->trade_no]", 1);
+                }
             }
         }
 
@@ -702,9 +708,10 @@ class OrderService implements Order
                 if ($order->amount > $calcAmount) {
                     $rebate = $order->amount - $calcAmount; //差价
                     $order->premium = $rebate;
-                    if ($rebate >= 0.01) {
-                        Bill::create($promote_1, $rebate, Bill::TYPE_ADD, "分站返佣", 1);
-                        $order->rebate = $rebate;
+                    $a2 = $rebate - ($order->card_id ? $commodity->draft_premium : 0) - $order->pay_cost;
+                    if ($rebate >= 0.01 && $a2 > 0) {
+                        Bill::create($promote_1, $a2, Bill::TYPE_ADD, "分站返佣", 1);
+                        $order->rebate = $a2;
                     }
                 }
                 //检测到商户等级，进行分站返佣算法 废弃
@@ -712,7 +719,7 @@ class OrderService implements Order
             } else {
                 //推广系统
                 $promoteRebateV1 = (float)Config::get("promote_rebate_v1");  //3级返佣 0.2
-                $rebate1 = $promoteRebateV1 * $order->amount;   //20.00
+                $rebate1 = $promoteRebateV1 * ($order->amount - $order->pay_cost);   //20.00
                 if ($rebate1 >= 0.01) {
                     $promote_2 = $promote_1->parent; //获取上级
                     if (!$promote_2) {
